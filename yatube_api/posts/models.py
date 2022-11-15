@@ -23,11 +23,19 @@ class Post(models.Model):
     )
     image = models.ImageField(
         upload_to='posts/', null=True, blank=True
-    )  # поле для картинки
+    )
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE,
         related_name="posts", blank=True, null=True
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'text'],
+                name='unique_author_text'
+            )
+        ]
 
     def __str__(self):
         return self.text
@@ -44,3 +52,11 @@ class Comment(models.Model):
     created = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True
     )
+
+    # class Meta:
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=['author', 'text', 'post'],
+    #             name='unique_author_text_post'
+    #         )
+    #     ]
