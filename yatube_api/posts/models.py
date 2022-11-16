@@ -25,20 +25,20 @@ class Post(models.Model):
         upload_to='posts/', null=True, blank=True
     )
     group = models.ForeignKey(
-        Group, on_delete=models.CASCADE,
-        related_name="posts", blank=True, null=True
+        Group, on_delete=models.SET_NULL,
+        related_name='posts', blank=True, null=True
     )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['author', 'text'],
-                name='unique_author_text'
-            )
-        ]
+    # class Meta:
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=['author', 'text'],
+    #             name='unique_author_text'
+    #         )
+    #     ]
 
     def __str__(self):
-        return self.text
+        return f'Автор: {self.author},\nТекст:{self.text[:15]}'
 
 
 class Comment(models.Model):

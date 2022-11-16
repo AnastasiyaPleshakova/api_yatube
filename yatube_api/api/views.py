@@ -1,35 +1,24 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 
+from api.permissions import IsAuthorOrReadOnly
 from api.serializers import CommentSerializer, GroupSerializer
 from api.serializers import PostSerializer
 from posts.models import Group, Post
 
 
-def permissions(self, serializer, view_set):
-    if self.request.method != 'DELETE':
-        if serializer.instance.author != self.request.user:
-            raise PermissionDenied('Изменение чужого контента запрещено!')
-        super(view_set, self).perform_update(serializer)
-    else:
-        if serializer.author != self.request.user:
-            raise PermissionDenied('Удаление чужого контента запрещено!')
-        super(view_set, self).perform_destroy(serializer)
+def get_post_object(self):
+    return get_object_or_404(Post, pk=self.kwargs.get('post_id'))
 
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    permission_classes = [IsAuthorOrReadOnly, IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    def perform_destroy(self, serializer):
-        permissions(self, serializer, PostViewSet)
-
-    def perform_update(self, serializer):
-        permissions(self, serializer, PostViewSet)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -39,17 +28,10 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthorOrReadOnly, IsAuthenticated]
 
     def get_queryset(self):
-        post = get_object_or_404(Post, pk=self.kwargs.get('post_id'))
-        return post.comments
+        return get_post_object(self).comments
 
     def perform_create(self, serializer):
-        post = get_object_or_404(Post, pk=self.kwargs.get('post_id'))
-        serializer.save(author=self.request.user, post=post)
-
-    def perform_destroy(self, serializer):
-        permissions(self, serializer, CommentViewSet)
-
-    def perform_update(self, serializer):
-        permissions(self, serializer, CommentViewSet)
+        serializer.save(author=self.request.user, post=get_post_object(self))
